@@ -1,22 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import './App.css'
-import {
-  getGastos
-} from './utils/Request.api'; 
+import Index from "./pages/index";
 
-function App() {
-  const [texto,setTexto] = useState("");
-  const views = async () =>{
-    const newTexto = await getGastos();
-    setTexto(newTexto);
-  };
+
+export default function App(){
+
 
   return (
-    <>
-    <p>Hola Mundo :D</p>
-    <p>{texto}</p>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/index" />} />
+        <Route path="/index" element={<Index />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
-
-export default App
