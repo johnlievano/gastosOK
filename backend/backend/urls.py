@@ -15,7 +15,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name = 'token_refresh'),
     path('api/', include('apps.gastos.urls')),
     path('api/', include('apps.users.urls')),
-    path('', RedirectView.as_view(url='http://localhost:5174', permanent=False)),
+    path('', RedirectView.as_view(url='http://localhost:5173', permanent=False)),
     path("api/docs/", include_docs_urls(title="Password Generator API")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

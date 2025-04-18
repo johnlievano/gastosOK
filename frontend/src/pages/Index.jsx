@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Buttom from "../components/Buttomm";
+import Buttom from "../components/Buttom";
 import {
     getGastos
 } from '../utils/Request.api'; 
@@ -17,7 +17,7 @@ export default function Index(){
         <>
             <p>Hola Mundo</p>
             <p>{texto}</p>
-            <Buttom text="clicame rico" />
+            <Buttom text="Email" icon="CiMail" color="teal" variant="solid" size="lg" />
         </>
     );  
 }
