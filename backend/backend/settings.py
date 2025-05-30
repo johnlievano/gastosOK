@@ -33,6 +33,8 @@ DJANGO_APPS = [
 ]
 
 PROJECTS_APPS = [
+    'apps.capital',
+    'apps.savings',
     'apps.gastos',
     'apps.users',
 ]
@@ -110,7 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-#AUTH_USER_MODEL = 'users.Users'
+AUTH_USER_MODEL = 'users.Users'
 
 
 # Internationalization
