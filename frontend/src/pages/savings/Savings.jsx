@@ -7,14 +7,9 @@ import { useTheme } from "../components/ThemeContext";
 import "../../styles.css";
 
 export default function Savings() {
-    const [categoriasAhorro, setCategoriasAhorro] = useState(() => {
+    const [categorias, setCategorias] = useState(() => {
         const saved = localStorage.getItem("categoriasAhorro");
         return saved ? JSON.parse(saved) : ["EMERGENCIA", "VIAJE", "INVERSIONES", "ALL"];
-    });
-
-    const [ahorrosPorCategoria, setAhorrosPorCategoria] = useState(() => {
-        const saved = localStorage.getItem("ahorrosPorCategoria");
-        return saved ? JSON.parse(saved) : {};
     });
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -23,6 +18,13 @@ export default function Savings() {
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [formularioActivo, setFormularioActivo] = useState(false);
+    const [editandoAhorro, setEditandoAhorro] = useState(null);
+
+    const [ahorrosPorCategoria, setAhorrosPorCategoria] = useState(() => {
+        const saved = localStorage.getItem("ahorrosPorCategoria");
+        return saved ? JSON.parse(saved) : { ALL: {} };
+    });
+
     const { isDarkMode } = useTheme();
 
     useEffect(() => {
@@ -44,31 +46,34 @@ export default function Savings() {
     }, [isSidebarOpen]);
 
     useEffect(() => {
-        localStorage.setItem("categoriasAhorro", JSON.stringify(categoriasAhorro));
-    }, [categoriasAhorro]);
+        localStorage.setItem("categoriasAhorro", JSON.stringify(categorias));
+    }, [categorias]);
 
     useEffect(() => {
         localStorage.setItem("ahorrosPorCategoria", JSON.stringify(ahorrosPorCategoria));
     }, [ahorrosPorCategoria]);
 
-    const getAhorrosALL = () => {
-        return categoriasAhorro
-            .filter(cat => cat !== "ALL")
-            .flatMap(cat => ahorrosPorCategoria[cat] || []);
-    };
+    useEffect(() => {
+        setAhorrosPorCategoria(prev => ({
+            ...prev,
+            ALL: categorias
+                .filter(cat => cat !== "ALL")
+                .flatMap(cat => prev[cat] || [])
+        }));
+    }, [categorias]);
 
     const agregarCategoria = () => {
-        const nuevaCat = nuevaCategoria.trim().toUpperCase();
-        if (!nuevaCat || categoriasAhorro.includes(nuevaCat)) return;
+        const nuevaCatUpper = nuevaCategoria.trim().toUpperCase();
+        if (!nuevaCatUpper || categorias.includes(nuevaCatUpper)) return;
 
-        const nuevas = [...categoriasAhorro];
-        const idx = nuevas.indexOf("ALL");
-        nuevas.splice(idx, 0, nuevaCat);
-        setCategoriasAhorro(nuevas);
+        const nuevasCategorias = [...categorias];
+        const indiceAll = nuevasCategorias.indexOf("ALL");
+        nuevasCategorias.splice(indiceAll, 0, nuevaCatUpper);
+        setCategorias(nuevasCategorias);
 
         setAhorrosPorCategoria(prev => ({
             ...prev,
-            [nuevaCat]: []
+            [nuevaCatUpper]: []
         }));
 
         setNuevaCategoria("");
@@ -77,9 +82,12 @@ export default function Savings() {
 
     const eliminarCategoria = (categoria) => {
         if (categoria === "ALL") return;
-        if (!window.confirm(`¿Eliminar categoría "${categoria}"?`)) return;
 
-        setCategoriasAhorro(categoriasAhorro.filter(c => c !== categoria));
+        const confirmacion = window.confirm(`¿Está seguro de eliminar la categoría "${categoria}"?`);
+        if (!confirmacion) return;
+
+        const nuevasCategorias = categorias.filter(c => c !== categoria);
+        setCategorias(nuevasCategorias);
 
         setAhorrosPorCategoria(prev => {
             const { [categoria]: _, ...rest } = prev;
@@ -100,31 +108,41 @@ export default function Savings() {
         };
 
         if (isNaN(nuevoAhorro.monto) || nuevoAhorro.monto <= 0) {
-            alert("Ingresa un monto válido.");
+            alert("Por favor ingresa un monto válido.");
             return;
         }
 
         setAhorrosPorCategoria(prev => {
-            const nuevos = [...(prev[selectedCategory] || []), nuevoAhorro];
+            const categoria = editandoAhorro ? editandoAhorro.categoria : selectedCategory;
+            const ahorrosActuales = [...(prev[categoria] || [])];
+
+            if (editandoAhorro) {
+                ahorrosActuales[editandoAhorro.index] = nuevoAhorro;
+            } else {
+                ahorrosActuales.push(nuevoAhorro);
+            }
+
             return {
                 ...prev,
-                [selectedCategory]: nuevos
+                [categoria]: ahorrosActuales
             };
         });
 
         e.target.reset();
         setFormularioActivo(false);
+        setEditandoAhorro(null);
     };
 
     const eliminarAhorro = (categoria, index) => {
-        if (!window.confirm("¿Eliminar este ahorro?")) return;
+        const confirmacion = window.confirm("¿Estás seguro de eliminar este ahorro?");
+        if (!confirmacion) return;
 
         setAhorrosPorCategoria(prev => {
-            const nuevos = [...prev[categoria]];
-            nuevos.splice(index, 1);
+            const nuevosAhorros = [...prev[categoria]];
+            nuevosAhorros.splice(index, 1);
             return {
                 ...prev,
-                [categoria]: nuevos
+                [categoria]: nuevosAhorros
             };
         });
     };
@@ -143,11 +161,23 @@ export default function Savings() {
                     >
                         <nav>
                             <ul>
-                                <li><Link to="/" onClick={() => setIsSidebarOpen(false)}>Inicio</Link></li>
-                                <li><Link to="/expenses" onClick={() => setIsSidebarOpen(false)}>Gastos</Link></li>
-                                <li><Link to="/calendar" onClick={() => setIsSidebarOpen(false)}>Calendario</Link></li>
-                                <li><Link to="/settings" onClick={() => setIsSidebarOpen(false)}>Configuración</Link></li>
-                                <li><button onClick={() => setIsSidebarOpen(false)}>Cerrar</button></li>
+                                <li>
+                                    <Link to="/" onClick={() => setIsSidebarOpen(false)}>Inicio</Link>
+                                </li>
+                                <li>
+                                    <Link to="/expenses" onClick={() => setIsSidebarOpen(false)}>Gastos</Link>
+                                </li>
+                                <li>
+                                    <Link to="/calendar" onClick={() => setIsSidebarOpen(false)}>Calendario</Link>
+                                </li>
+                                <li>
+                                    <Link to="/settings" onClick={() => setIsSidebarOpen(false)}>
+                                        Configuración
+                                    </Link>
+                                </li>
+                                <li>
+                                    <button onClick={() => setIsSidebarOpen(false)}>Cerrar</button>
+                                </li>
                             </ul>
                         </nav>
                     </motion.aside>
@@ -165,7 +195,7 @@ export default function Savings() {
             <div className="expenses-box expenses-box--left scroll-categorias">
                 <ListOfThings
                     title="Categorías de Ahorro"
-                    categories={categoriasAhorro}
+                    categories={categorias}
                     selected={selectedCategory}
                     onSelect={setSelectedCategory}
                     onDelete={eliminarCategoria}
@@ -194,65 +224,100 @@ export default function Savings() {
             <div className="expenses-box expenses-box--right">
                 {formularioActivo && selectedCategory && selectedCategory !== "ALL" && (
                     <form className="gasto-form" onSubmit={agregarAhorro}>
-                        <h4>Agregar ahorro a {selectedCategory}</h4>
-                        <input name="nombre" placeholder="Nombre" required maxLength={30} />
-                        <input name="monto" type="number" placeholder="Monto" required />
-                        <input name="fecha" type="date" required />
-                        <button type="submit">Agregar</button>
-                        <button type="button" onClick={() => setFormularioActivo(false)}>Cerrar</button>
+                        <h4>{editandoAhorro ? `Editar ahorro en ${selectedCategory}` : `Agregar ahorro a ${selectedCategory}`}</h4>
+                        <input 
+                            name="nombre" 
+                            placeholder="Nombre" 
+                            required 
+                            maxLength={30} 
+                            defaultValue={editandoAhorro?.nombre || ""} 
+                        />
+                        <input 
+                            name="monto" 
+                            type="number" 
+                            placeholder="Monto" 
+                            required 
+                            defaultValue={editandoAhorro?.monto || ""} 
+                        />
+                        <input 
+                            name="fecha" 
+                            type="date" 
+                            required 
+                            defaultValue={editandoAhorro?.fecha || ""} 
+                        />
+                        <button type="submit">{editandoAhorro ? "Guardar cambios" : "Agregar"}</button>
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                setFormularioActivo(false);
+                                setEditandoAhorro(null);
+                            }}
+                        >
+                            Cerrar
+                        </button>
                     </form>
                 )}
 
                 {(selectedCategory === null || selectedCategory === "ALL"
-                    ? categoriasAhorro.filter(c => c !== "ALL")
+                    ? categorias.filter(c => c !== "ALL")
                     : [selectedCategory]
-                ).map((cat, idx) => {
-                    const ahorros = cat === "ALL" ? getAhorrosALL() : (ahorrosPorCategoria[cat] || []);
-                    return (
-                        <div key={idx} className="category-card">
-                            <div className="category-header">
-                                <h3 className="category-title">{cat}</h3>
-                                {cat !== "ALL" && (
+                ).map((cat, idx) => (
+                    <div key={idx} className="category-card">
+                        <div className="category-header">
+                            <h3 className="category-title">{cat}</h3>
+                            {cat !== "ALL" && (
+                                <button
+                                    className="btn-agregar-gasto"
+                                    onClick={() => {
+                                        setSelectedCategory(cat);
+                                        setFormularioActivo(true);
+                                        setEditandoAhorro(null);
+                                    }}
+                                >
+                                    Añadir ahorro
+                                </button>
+                            )}
+                        </div>
+
+                        {ahorrosPorCategoria[cat]?.map((ahorro, i) => (
+                            <div key={i} className="gasto-item">
+                                <span className="gasto-nombre" title={ahorro.nombre}>
+                                    {ahorro.nombre}
+                                </span>
+                                <span className="gasto-monto" style={{ color: "green" }}>
+                                    +${ahorro.monto.toLocaleString()}
+                                </span>
+                                <div className="gasto-acciones">
+                                    <span className="gasto-fecha">{ahorro.fecha}</span>
+
                                     <button
-                                        className="btn-editar"
+                                        className="btn-editar-gasto"
+                                        title="Editar ahorro"
                                         onClick={() => {
                                             setSelectedCategory(cat);
                                             setFormularioActivo(true);
+                                            setEditandoAhorro({ 
+                                                categoria: cat, 
+                                                index: i, 
+                                                ...ahorro 
+                                            });
                                         }}
                                     >
-                                        Editar
+                                        ✏️
                                     </button>
-                                )}
-                            </div>
 
-                            {ahorros.map((ahorro, i) => (
-                                <div key={i} className="gasto-item">
-                                    <span className="gasto-nombre" title={ahorro.nombre}>
-                                        {ahorro.nombre}
-                                    </span>
-                                    <span className="gasto-monto" style={{ color: "green" }}>
-                                        +${ahorro.monto.toLocaleString()}
-                                    </span>
-                                    <div className="gasto-acciones">
-                                        <span className="gasto-fecha">{ahorro.fecha}</span>
-                                        {formularioActivo && selectedCategory === cat && (
-                                            <>
-                                                <button className="btn-editar-gasto" title="Editar ahorro">✏️</button>
-                                                <button
-                                                    className="btn-eliminar-gasto"
-                                                    onClick={() => eliminarAhorro(cat, i)}
-                                                    title="Eliminar ahorro"
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
+                                    <button
+                                        className="btn-eliminar-gasto"
+                                        onClick={() => eliminarAhorro(cat, i)}
+                                        title="Eliminar ahorro"
+                                    >
+                                        🗑️
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
-                    );
-                })}
+                            </div>
+                        ))}
+                    </div>
+                ))}
             </div>
         </div>
     );

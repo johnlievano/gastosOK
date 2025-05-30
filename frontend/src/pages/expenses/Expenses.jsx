@@ -64,17 +64,6 @@ export default function Expenses() {
         }));
     }, [categorias]);
 
-    useEffect(() => {
-        if (editandoGasto) {
-            const form = document.querySelector(".gasto-form");
-            if (form) {
-                form.nombre.value = editandoGasto.nombre;
-                form.monto.value = editandoGasto.monto;
-                form.fecha.value = editandoGasto.fecha;
-            }
-        }
-    }, [editandoGasto]);
-
     const agregarCategoria = () => {
         const nuevaCatUpper = nuevaCategoria.trim().toUpperCase();
         if (!nuevaCatUpper || categorias.includes(nuevaCatUpper)) return;
@@ -238,14 +227,36 @@ export default function Expenses() {
                 {formularioActivo && selectedCategory && selectedCategory !== "ALL" && (
                     <form className="gasto-form" onSubmit={agregarGasto}>
                         <h4>{editandoGasto ? `Editar gasto en ${selectedCategory}` : `Agregar gasto a ${selectedCategory}`}</h4>
-                        <input name="nombre" placeholder="Nombre" required maxLength={30} />
-                        <input name="monto" type="number" placeholder="Monto" required />
-                        <input name="fecha" type="date" required />
+                        <input 
+                            name="nombre" 
+                            placeholder="Nombre" 
+                            required 
+                            maxLength={30} 
+                            defaultValue={editandoGasto?.nombre || ""} 
+                        />
+                        <input 
+                            name="monto" 
+                            type="number" 
+                            placeholder="Monto" 
+                            required 
+                            defaultValue={editandoGasto?.monto || ""} 
+                        />
+                        <input 
+                            name="fecha" 
+                            type="date" 
+                            required 
+                            defaultValue={editandoGasto?.fecha || ""} 
+                        />
                         <button type="submit">{editandoGasto ? "Guardar cambios" : "Agregar"}</button>
-                        <button type="button" onClick={() => {
-                            setFormularioActivo(false);
-                            setEditandoGasto(null);
-                        }}>Cerrar</button>
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                setFormularioActivo(false);
+                                setEditandoGasto(null);
+                            }}
+                        >
+                            Cerrar
+                        </button>
                     </form>
                 )}
 
@@ -284,7 +295,15 @@ export default function Expenses() {
                                     <button
                                         className="btn-editar-gasto"
                                         title="Editar gasto"
-                                        onClick={() => setEditandoGasto({ categoria: cat, index: i, ...gasto })}
+                                        onClick={() => {
+                                            setSelectedCategory(cat);
+                                            setFormularioActivo(true);
+                                            setEditandoGasto({ 
+                                                categoria: cat, 
+                                                index: i, 
+                                                ...gasto 
+                                            });
+                                        }}
                                     >
                                         ✏️
                                     </button>
